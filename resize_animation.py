@@ -35,9 +35,7 @@
 # works, set the filter to disabled.
 
 import obspython as S
-import threading
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import os
 
 OBS_SCENE = "Scene"
 WAYWALL_SOURCE = "Minecraft"
@@ -45,18 +43,9 @@ RESOLUTION_FILE = "/home/char/.resetti_state"
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 
-update = threading.Event()
-
-class ResizeFileHandler(FileSystemEventHandler):
-    global update
-    def on_modified(self, event):
-        if event.src_path == RESOLUTION_FILE:
-            print("meow! file was modified!")
-            update.set()
-
 
 def script_load(settings):
-    global prevw, prevh, visualw, visualh, gamew, gameh, anim_time, animating
+    global prevw, prevh, visualw, visualh, gamew, gameh, anim_time, animating, lastmtime
     global observer
     prevw = SCREEN_WIDTH
     prevh = SCREEN_HEIGHT
@@ -66,12 +55,9 @@ def script_load(settings):
     gameh = SCREEN_HEIGHT
     animating = False
     anim_time = 2.0
+    lastmtime = 0
 
     fixInstance()
-    event_handler = ResizeFileHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=RESOLUTION_FILE, recursive=False)
-    observer.start()
 
 
 def script_unload():
@@ -135,9 +121,9 @@ def get_visual_size(seconds):
 
 def script_tick(seconds):
     # we have a visual size and a physical size
-    global gamew, gameh, ssw, ssh, visualw, visualh, anim_time, animating, delay
-    if update.is_set():
-        update.clear()
+    global gamew, gameh, ssw, ssh, visualw, visualh, anim_time, animating, delay, lastmtime
+    if os.path.getmtime(RESOLUTION_FILE) != lastmtime:
+        lastmtime = os.path.getmtime(RESOLUTION_FILE)
         try:
             with open(RESOLUTION_FILE, "r") as f:
                 size = f.read().strip()
