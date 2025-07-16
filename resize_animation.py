@@ -34,6 +34,9 @@
 # you can verify the freeze is working by hiding and unhiding the filter. once you confirm it
 # works, set the filter to disabled.
 
+# if you want the stuff outside your minecraft window to be visible, you can add another waywall capture copy
+# called Background right below Screenshot. make sure it's not cropped or resized, and also add a Freeze filter called Freeze to it.
+
 import obspython as S
 import os
 
@@ -61,8 +64,7 @@ def script_load(settings):
 
 
 def script_unload():
-    observer.stop()
-    observer.join()
+    pass
 
 
 def begin_resize(size):
@@ -87,12 +89,13 @@ def begin_resize(size):
     anim_time = 0.0
     delay = 2
     animating = True
-    freeze_screenshot(gamew/gameh < visualw/visualh) # freeze if it shrinks horizontally
+    freeze_screenshot("Screenshot", gamew/gameh < visualw/visualh) # freeze if it shrinks horizontally
+    freeze_screenshot("Background", gamew == SCREEN_WIDTH and gameh == SCREEN_HEIGHT)
 
 
-def freeze_screenshot(frozen=True):
+def freeze_screenshot(scene, frozen=True):
     instance_scene = S.obs_get_scene_by_name(OBS_SCENE)
-    sceneitem = S.obs_scene_find_source(instance_scene, "Screenshot")
+    sceneitem = S.obs_scene_find_source(instance_scene, scene)
     if not sceneitem:
         return
     source = S.obs_sceneitem_get_source(sceneitem)
@@ -108,7 +111,8 @@ def get_visual_size(seconds):
     t = anim_time * 4.0
     if t > 1:
         animating = False
-        freeze_screenshot(False)
+        freeze_screenshot("Screenshot", False)
+        freeze_screenshot("Background", False)
         return gamew, gameh
     
     # cubic easing out
