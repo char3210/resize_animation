@@ -34,8 +34,6 @@
 # you can verify the freeze is working by hiding and unhiding the filter. once you confirm it
 # works, set the filter to disabled.
 
-# todo unhardcode scene and source and resolution, make obs-freeze optional
-
 import obspython as S
 import threading
 from watchdog.observers import Observer
