@@ -96,6 +96,7 @@ def begin_resize(size):
 def freeze_screenshot(scene, frozen=True):
     instance_scene = S.obs_get_scene_by_name(OBS_SCENE)
     sceneitem = S.obs_scene_find_source(instance_scene, scene)
+    # S.obs_sceneitem_set_visible(sceneitem, frozen)
     if not sceneitem:
         return
     source = S.obs_sceneitem_get_source(sceneitem)
@@ -154,15 +155,18 @@ def script_tick(seconds):
         cropy = 0
     resizeSource(WAYWALL_SOURCE, bbw, bbh, cropx, cropx, cropy, cropy)
 
-    ssbbw = visualw
-    sscropx = (SCREEN_WIDTH - ssw) // 2
-    if ssh <= SCREEN_HEIGHT:
-        ssbbh = visualh
-        sscropy = (SCREEN_HEIGHT - ssh) // 2
+    if animating and gamew/gameh < visualw/visualh:
+        ssbbw = visualw
+        sscropx = (SCREEN_WIDTH - ssw) // 2
+        if ssh <= SCREEN_HEIGHT:
+            ssbbh = visualh
+            sscropy = (SCREEN_HEIGHT - ssh) // 2
+        else:
+            ssbbh = int(visualh * (SCREEN_HEIGHT / ssh))
+            sscropy = 0
+        resizeSource("Screenshot", ssbbw, ssbbh, sscropx, sscropx, sscropy, sscropy)
     else:
-        ssbbh = int(visualh * (SCREEN_HEIGHT / ssh))
-        sscropy = 0
-    resizeSource("Screenshot", ssbbw, ssbbh, sscropx, sscropx, sscropy, sscropy)
+        resizeSource("Screenshot", 2, 2, 0, 0, 0, 0) # effectively hide the screenshot source when not animating
         
 
 def script_description():
