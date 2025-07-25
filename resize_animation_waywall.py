@@ -28,13 +28,13 @@
 # end
 
 # lastly you can make your resizing smoother by installing the obs-freeze-filter plugin 
-# (you can install my fork which fixes a gamma bug)
 # and then create a copy of your waywall capture (use Paste (Duplicate)) called Screenshot right below waywall.
+# make sure the transform settings are the same as the waywall capture (instructions above)
 # then add a Freeze filter called Freeze to the Screenshot source. 
 # you can verify the freeze is working by hiding and unhiding the filter. once you confirm it
-# works, set the filter to disabled.
+# works, hide the filter.
 
-# if you want the stuff outside your minecraft window to be visible, you can add another waywall capture copy
+# if you want the stuff outside your minecraft window to be visible on obs (e.g. mirrors), you can add another waywall capture 
 # called Background right below Screenshot. make sure it's not cropped or resized, and also add a Freeze filter called Freeze to it.
 
 import obspython as S

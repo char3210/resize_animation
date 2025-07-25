@@ -1,6 +1,6 @@
--- resize animation script for obs with jingle and resetti maybe
+-- resize animation script for obs with jingle on windows
 -- you need to set up your obs scene in a particular way:
--- - make sure the OBS scene with your game matches OBS_SCENE
+-- - make sure the OBS scene with your game matches OBS_SCENE (you can modify the script)
 -- - make sure your minecraft capture matches MINECRAFT_SOURCE
 -- - edit the transform of your minecraft capture as follows:
 --   - set Positional Alignment to "Center"
@@ -8,12 +8,23 @@
 --   - set Bounding Box Type to "Scale to height of bounds"
 --   - set Alignment in Bounding Box to "Center"
 --   - check "Crop to Bounding Box"
+-- - add this script to OBS > Tools > Scripts
+-- whenever you modify this script, make sure to press the reload scripts button in OBS
 
--- lastly you can make your resizing smoother by installing the obs-freeze-filter plugin 
--- and then create a copy of your minecraft capture (use Paste (Duplicate)) called Screenshot right below minecraft.
--- then add a Freeze filter called Freeze to the Screenshot source. 
--- you can verify the freeze is working by hiding and unhiding the filter. once you confirm it
--- works, set the filter to disabled.
+-- EXPERIMENTAL FEATURE: you can make your resizing smoother
+-- this requires your game to be in the center of your display that you're playing on (such as on Julti)
+-- and also uses display capture so there's a risk of leaking the screen your minecraft is on
+-- (insert waywall propaganda here it doesnt have this issue)
+-- to do this:
+-- - install my modified version of obs-freeze-filter plugin https://github.com/char3210/obs-freeze-filter/releases/tag/v1
+-- - create a display capture called Screenshot right below minecraft.
+-- - edit the transform to the same as the minecraft capture (instructions above)
+-- - add a Freeze filter called Freeze to the Screenshot source. 
+-- you can verify the freeze is working by checking the "Frozen" checkbox in the filter settings.
+-- and then it should just work (tm)
+-- if when resizing normal -> thin your desktop is in the background, try increasing BufferSize in the Freeze filter settings
+-- a larger value of BufferSize makes the frozen background more delayed and uses more GPU memory i think so set it high enough
+-- to not leak your desktop but not too high
 
 local obs = obslua
 
@@ -53,8 +64,7 @@ function script_unload()
 end
 
 function freeze_screenshot(sceneitemname, frozen)
-    -- Currently disabled - uncomment and modify as needed
-    --[[
+    
     local instance_scene = obs.obs_get_scene_by_name(OBS_SCENE)
     local sceneitem = obs.obs_scene_find_source(instance_scene, sceneitemname)
     if not sceneitem then
@@ -77,7 +87,7 @@ function freeze_screenshot(sceneitemname, frozen)
     obs.obs_data_release(filter_settings)
     obs.obs_source_release(filter)
     obs.obs_scene_release(instance_scene)
-    --]]
+    
 end
 
 function get_visual_size(seconds)
@@ -115,7 +125,7 @@ function script_tick(seconds)
         animating = true
         freeze_screenshot("Screenshot", gamew/gameh < visualw/visualh) -- freeze if it shrinks horizontally
     end
-    
+
     if not animating then
         return
     end
@@ -129,9 +139,20 @@ function script_tick(seconds)
     resizeSource(MINECRAFT_SOURCE, visualw, visualh, 0, 0, 0, 0)
 
     if animating and gamew/gameh < visualw/visualh then
-        resizeSource("Screenshot", visualw, visualh, 0, 0, 0, 0)
+        local ssbbw = visualw
+        local sscropx = math.floor((SCREEN_WIDTH - ssw) / 2)
+        local ssbbh, sscropy
+        if ssh <= SCREEN_HEIGHT then
+            ssbbh = visualh
+            sscropy = math.floor((SCREEN_HEIGHT - ssh) / 2)
+        else
+            ssbbh = math.floor(visualh * (SCREEN_HEIGHT / ssh))
+            sscropy = 0
+        end
+
+        resizeSource("Screenshot", ssbbw, ssbbh, sscropx, sscropx, sscropy, sscropy)
     else
-        -- resizeSource("Screenshot", 2, 2, 0, 0, 0, 0) -- effectively hide the screenshot source when not animating
+        resizeSource("Screenshot", 2, 2, 0, 0, 0, 0) -- effectively hide the screenshot source when not animating
     end
 end
 
