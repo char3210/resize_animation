@@ -48,6 +48,7 @@ def script_unload():
 
 
 def freeze_screenshot(sceneitemname, frozen=True):
+    pass
     # instance_scene = S.obs_get_scene_by_name(OBS_SCENE)
     # sceneitem = S.obs_scene_find_source(instance_scene, sceneitemname)
     # # S.obs_sceneitem_set_visible(sceneitem, frozen)
