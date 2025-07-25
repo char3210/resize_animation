@@ -21,7 +21,6 @@ import os
 
 OBS_SCENE = "Scene"
 MINECRAFT_SOURCE = "Minecraft"
-RESOLUTION_FILE = "/home/char/.resetti_state"
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 
