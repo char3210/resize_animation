@@ -2,7 +2,7 @@
 # this is intended for the lock some instances then play them reset style
 # make sure you have the Freeze filter plugin
 # make sure you setup WAYWALL_SOURCE and Screenshot the same as in resize_animation_waywall.py (even if you're not using resize animations)
-# for this script you also need an additional waywall capture called Wall below Minecraft, Screenshot, and Background.
+# for this script you also need an additional waywall capture called Wall below Minecraft, Screenshot, and Background. Add a freeze filter named Freeze to Wall
 # the locked instances should be cropped out of the Wall capture for best results.
 # and then below the Wall capture should be an image capture of your wall background (.minecraft/resourcepacks/{wall pack}/assets/seedqueue/textures/gui/wall/background.png)
 # now to configure this script, there is now a WALL_STATE_FILE that should have the behavior of this waywall config:
