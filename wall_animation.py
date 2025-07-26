@@ -1,5 +1,55 @@
+# the silliest seedqueue wall animations (waywall)
+# this is intended for the lock some instances then play them reset style
+# make sure you have the Freeze filter plugin
+# make sure you setup WAYWALL_SOURCE and Screenshot the same as in resize_animation_waywall.py (even if you're not using resize animations)
+# for this script you also need an additional waywall capture called Wall below Minecraft, Screenshot, and Background.
+# the locked instances should be cropped out of the Wall capture for best results.
+# and then below the Wall capture should be an image capture of your wall background (.minecraft/resourcepacks/{wall pack}/assets/seedqueue/textures/gui/wall/background.png)
+# now to configure this script, there is now a WALL_STATE_FILE that should have the behavior of this waywall config:
+
+"""
+locking = false
+locked_insts = 0
+
+local play_next = function()
+    if waywall.state()["screen"] == "wall" then
+        locking = false
+        os.execute('echo "entering ' .. locked_insts .. '" > ~/.wall_state')
+        waywall.sleep(17)
+        waywall.press_key("Space")              -- ***your seedqueue Play Locked Instance key***
+        return true
+    end
+    return false
+end
+
+local lock_inst = function()
+    if waywall.state()["screen"] == "wall" then
+        if not locking then
+            locking = true
+            locked_insts = 0
+        end
+        locked_insts = locked_insts + 1
+    end
+    return false
+end
+
+local reset = function()
+    if locked_insts > 0 then
+        locked_insts = locked_insts - 1
+    end
+    os.execute('echo "playing ' .. locked_insts .. '" > ~/.wall_state')
+    waywall.sleep(17)
+    waywall.press_key("F6")                     -- ***your ingame reset key***
+    return true
+end
+"""
+
+# the script is configured by default for the Madobrick Dummy Layout on 1080p. to modify this, refer to {wall pack}/assets/seedqueue/wall/custom_layout.json
+# LOCKED_LEFT_X is the value of "locked" -> "x" * SCREEN_WIDTH, LOCKED_WIDTH is "locked" -> "width" * SCREEN_WIDTH, similarly for LOCKED_TOP_Y and LOCKED_HEIGHT. 
+
 import obspython as S
 import os
+import random
 
 OBS_SCENE = "Scene"
 WAYWALL_SOURCE = "Minecraft"
@@ -37,6 +87,15 @@ def script_unload():
     pass
 
 
+def hideSource(source, hidden=True):
+    instance_scene = S.obs_get_scene_by_name(OBS_SCENE)
+    sceneitem = S.obs_scene_find_source(instance_scene, source)
+    if not sceneitem:
+        return
+    S.obs_sceneitem_set_visible(sceneitem, not hidden)
+    S.obs_scene_release(instance_scene)
+
+
 def parse_state(statetext):
     global total_locked
     try:
@@ -44,14 +103,16 @@ def parse_state(statetext):
         locked_insts = int(locked_insts1)
         if state == "entering":
             freeze_screenshot("Screenshot", True)
-            freeze_screenshot("Background", True)
+            freeze_screenshot("Wall", True)
             total_locked = locked_insts
             return "entering"
         elif state == "playing" and locked_insts > 0:
             freeze_screenshot("Screenshot", True)
+            hideSource("Background", True)
             return "next"
         elif state == "playing" and locked_insts == 0:
             freeze_screenshot("Screenshot", True)
+            hideSource("Background", True)
             return "leaving"
         else:
             print(f"idk what {statetext} means")
@@ -85,7 +146,7 @@ def set_bounds_type(source, bounds_type):
 
 def script_tick(seconds):
     # we have a visual size and a physical size
-    global anim_type, anim_time, animating, delay, lastmtime, total_locked
+    global anim_type, anim_time, animating, delay, lastmtime, total_locked, xvel
     if os.path.getmtime(WALL_STATE_FILE) != lastmtime:
         lastmtime = os.path.getmtime(WALL_STATE_FILE)
         try:
@@ -97,6 +158,10 @@ def script_tick(seconds):
                     anim_time = 0.0
                     animating = True
                     delay = 1
+                    if random.randint(0, 1) == 0:
+                        xvel = random.randint(-2000, -1000)
+                    else:
+                        xvel = random.randint(1000, 2000)
                     set_bounds_type(WAYWALL_SOURCE, S.OBS_BOUNDS_STRETCH)
                     set_bounds_type("Screenshot", S.OBS_BOUNDS_STRETCH)
                     print(f"Starting {anim_type} animation")
@@ -109,17 +174,19 @@ def script_tick(seconds):
         return
 
     anim_time += seconds
-    t = anim_time * 2.0
-    if t > 1:
+    rawt = anim_time * 2.0
+    if rawt > 1:
         animating = False
         freeze_screenshot("Screenshot", False)
-        freeze_screenshot("Background", False)
+        if anim_type == "leaving":
+            freeze_screenshot("Wall", False)
         moveSource(WAYWALL_SOURCE, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT)
         moveSource("Screenshot", SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 2, 2)
         set_bounds_type(WAYWALL_SOURCE, S.OBS_BOUNDS_SCALE_TO_HEIGHT)
         set_bounds_type("Screenshot", S.OBS_BOUNDS_SCALE_TO_HEIGHT)
+        hideSource("Background", False)
         return
-    t = easing_func(t)
+    t = easing_func(rawt)
 
 
     if anim_type == "entering":
@@ -161,18 +228,29 @@ def script_tick(seconds):
         bbw = SCREEN_WIDTH
         bbh = SCREEN_HEIGHT
         moveSource(WAYWALL_SOURCE, x, y, bbw, bbh)
-        # screenshot source
-        y = SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t
-        moveSource("Screenshot", x, y, bbw, bbh)
+        # screenshot source (silly)
+        # i want x to follow 1/rawt from 1 to 2
+        x1 = 1/(rawt+1)
+        
+        x = SCREEN_WIDTH / 2 + xvel * (1 - x1)
+        # y is a parabola following gravity
+        y = 2000 * rawt * rawt - 2000 * rawt + 540
+        bbw = (x1-0.5) * 2 * SCREEN_WIDTH
+        bbh = (x1-0.5) * 2 * SCREEN_HEIGHT
+        moveSource("Screenshot", x, y, bbw, bbh, rot=rawt * 900)
     elif anim_type == "leaving":
         # waywall source
         moveSource(WAYWALL_SOURCE, -2, -2, 2, 2)
-        # screenshot source
-        x = SCREEN_WIDTH / 2
-        y = SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t
-        bbw = SCREEN_WIDTH
-        bbh = SCREEN_HEIGHT
-        moveSource("Screenshot", x, y, bbw, bbh)
+        # screenshot source (silly)
+        # i want x to follow 1/rawt from 1 to 2
+        x1 = 1/(rawt+1)
+        x = SCREEN_WIDTH / 2 + xvel * (1 - x1)
+        # y is a parabola following gravity
+        y = 2000 * rawt * rawt - 2000 * rawt + 540
+        bbw = (x1-0.5) * 2 * SCREEN_WIDTH
+        bbh = (x1-0.5) * 2 * SCREEN_HEIGHT
+        print(f"{bbw=} {y=}")
+        moveSource("Screenshot", x, y, bbw, bbh, rot=rawt * 900)
 
 
 
@@ -185,7 +263,7 @@ def fixInstance():
     moveSource("Screenshot", SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 2, 2)
 
 
-def moveSource(source, x, y, bbw, bbh, cropl=0, cropr=0, cropt=0, cropb=0):
+def moveSource(source, x, y, bbw, bbh, cropl=0, cropr=0, cropt=0, cropb=0, rot=0):
     instance_scene = S.obs_get_scene_by_name(OBS_SCENE)
     source = S.obs_scene_find_source(instance_scene, source)
     if not source:
@@ -201,6 +279,7 @@ def moveSource(source, x, y, bbw, bbh, cropl=0, cropr=0, cropt=0, cropb=0):
     info.pos.y = int(y)
     info.bounds.x = int(bbw)
     info.bounds.y = int(bbh)
+    info.rot = float(rot)
     S.obs_sceneitem_set_crop(source, crop)
     S.obs_sceneitem_set_info(source, info)
     S.obs_scene_release(instance_scene)
