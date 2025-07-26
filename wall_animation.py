@@ -42,6 +42,14 @@ local reset = function()
     waywall.press_key("F6")                     -- ***your ingame reset key***
     return true
 end
+
+-- and then bind these functions to your hotkeys in waywall config, e.g.:
+config.actions = {
+    ...
+    ["Space"] = play_next,
+    ["rmb"] = lock_inst,
+    ["F6"] = reset,
+}
 """
 
 # the script is configured by default for the Madobrick Dummy Layout on 1080p. to modify this, refer to {wall pack}/assets/seedqueue/wall/custom_layout.json
