@@ -45,7 +45,8 @@ end
 """
 
 # the script is configured by default for the Madobrick Dummy Layout on 1080p. to modify this, refer to {wall pack}/assets/seedqueue/wall/custom_layout.json
-# LOCKED_LEFT_X is the value of "locked" -> "x" * SCREEN_WIDTH, LOCKED_WIDTH is "locked" -> "width" * SCREEN_WIDTH, similarly for LOCKED_TOP_Y and LOCKED_HEIGHT. 
+# LOCKED_LEFT_X is the value of "locked" -> "x" * SCREEN_WIDTH, LOCKED_TOP_Y is "locked" -> "y" * SCREEN_HEIGHT.
+# LOCKED_WIDTH is "locked" -> "width" * SCREEN_WIDTH / "columns" and LOCKED_HEIGHT is "locked" -> "height" * SCREEN_HEIGHT / "rows".
 
 import obspython as S
 import os
@@ -59,8 +60,8 @@ SCREEN_HEIGHT = 1080
 
 LOCKED_LEFT_X = 0.85 * SCREEN_WIDTH
 LOCKED_WIDTH = 0.1172 * SCREEN_WIDTH
-LOCKED_TOP_Y = 60
-LOCKED_HEIGHT = 73
+LOCKED_TOP_Y = 0.0555 * SCREEN_HEIGHT / 1
+LOCKED_HEIGHT = 73   # 0.95 * SCREEN_HEIGHT / 14
 
 # feel free to omdify this to your liking; input is 0 to 1, output is 0 to 1
 def easing_func(t):
