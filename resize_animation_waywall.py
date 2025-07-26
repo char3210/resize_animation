@@ -49,7 +49,6 @@ SCREEN_HEIGHT = 1080
 
 def script_load(settings):
     global prevw, prevh, visualw, visualh, gamew, gameh, anim_time, animating, lastmtime
-    global observer
     prevw = SCREEN_WIDTH
     prevh = SCREEN_HEIGHT
     visualw = SCREEN_WIDTH
