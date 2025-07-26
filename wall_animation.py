@@ -51,6 +51,7 @@ def parse_state(statetext):
             freeze_screenshot("Screenshot", True)
             return "next"
         elif state == "playing" and locked_insts == 0:
+            freeze_screenshot("Screenshot", True)
             return "leaving"
         else:
             print(f"idk what {statetext} means")
@@ -142,62 +143,36 @@ def script_tick(seconds):
             moveSource(WAYWALL_SOURCE, x, y, bbw, bbh)
 
         # screenshot source (this will be a bit more complicated)
-        # x_scale_factor = SCREEN_WIDTH / LOCKED_WIDTH
-        # y_scale_factor = SCREEN_HEIGHT / LOCKED_HEIGHT
-        # x_start = SCREEN_WIDTH / 2
-        # x_end = (SCREEN_WIDTH / 2 - LOCKED_CENTER_X) * x_scale_factor + SCREEN_WIDTH / 2
-        # y_start = SCREEN_HEIGHT / 2
-        # y_end = (SCREEN_HEIGHT / 2 - LOCKED_CENTER_Y) * y_scale_factor + SCREEN_HEIGHT / 2
-        # x = int(x_start + (x_end - x_start) * t)
-        # y = int(y_start + (y_end - y_start) * t)
-        # bbwstart = SCREEN_WIDTH
-        # bbwend = SCREEN_WIDTH * x_scale_factor
-        # bbhstart = SCREEN_HEIGHT
-        # bbhend = SCREEN_HEIGHT * y_scale_factor
-        # bbw = int(bbwstart + (bbwend - bbwstart) * t)
-        # bbh = int(bbhstart + (bbhend - bbhstart) * t)
-        moveSource("Screenshot", x, y, bbw, bbh, LOCKED_LEFT_X, SCREEN_WIDTH - LOCKED_LEFT_X - LOCKED_WIDTH, LOCKED_TOP_Y, SCREEN_HEIGHT - LOCKED_TOP_Y - LOCKED_HEIGHT)
+        y_start = LOCKED_TOP_Y + (LOCKED_HEIGHT * total_locked) / 2
+        y_end = SCREEN_HEIGHT * total_locked / 2
+        y = int(y_start + (y_end - y_start) * t)
+        bbhstart = LOCKED_HEIGHT * total_locked
+        bbhend = SCREEN_HEIGHT * total_locked
+        bbh = int(bbhstart + (bbhend - bbhstart) * t)
+        cropl = LOCKED_LEFT_X
+        cropr = SCREEN_WIDTH - LOCKED_LEFT_X - LOCKED_WIDTH
+        cropt = LOCKED_TOP_Y
+        cropb = SCREEN_HEIGHT - LOCKED_TOP_Y - (LOCKED_HEIGHT * total_locked)
+        moveSource("Screenshot", x, y, bbw, bbh, cropl, cropr, cropt, cropb)
     elif anim_type == "next":
         # waywall source
-        x = int(SCREEN_WIDTH / 2)
-        y = int(3 * SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t)
+        x = SCREEN_WIDTH / 2
+        y = 3 * SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t
         bbw = SCREEN_WIDTH
         bbh = SCREEN_HEIGHT
         moveSource(WAYWALL_SOURCE, x, y, bbw, bbh)
         # screenshot source
-        y = int(SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t)
+        y = SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t
         moveSource("Screenshot", x, y, bbw, bbh)
-        pass
     elif anim_type == "leaving":
-        # this is the same as entering, but in reverse, and for the waywall source
-        # x_scale_factor = SCREEN_WIDTH / LOCKED_WIDTH
-        # y_scale_factor = SCREEN_HEIGHT / LOCKED_HEIGHT
-        # x_start = (SCREEN_WIDTH / 2 - LOCKED_CENTER_X) * x_scale_factor + SCREEN_WIDTH / 2
-        # x_end = SCREEN_WIDTH / 2
-        # y_start = (SCREEN_HEIGHT / 2 - LOCKED_CENTER_Y) * y_scale_factor - SCREEN_HEIGHT * (total_locked - 1) + SCREEN_HEIGHT / 2
-        # y_end = SCREEN_HEIGHT / 2
-        # x = int(x_start + (x_end - x_start) * t)
-        # y = int(y_start + (y_end - y_start) * t)
-        # bbwstart = SCREEN_WIDTH * x_scale_factor
-        # bbwend = SCREEN_WIDTH
-        # bbhstart = SCREEN_HEIGHT * y_scale_factor
-        # bbhend = SCREEN_HEIGHT
-        # bbw = int(bbwstart + (bbwend - bbwstart) * t)
-        # bbh = int(bbhstart + (bbhend - bbhstart) * t)
-        x_start = SCREEN_WIDTH / 2
-        x_end = LOCKED_CENTER_X
-        y_start = SCREEN_HEIGHT / 2
-        y_end = LOCKED_CENTER_Y + LOCKED_HEIGHT * (total_locked - 1)
-        x = int(x_start + (x_end - x_start) * t)
-        y = int(y_start + (y_end - y_start) * t)
-        bbwstart = SCREEN_WIDTH
-        bbwend = LOCKED_WIDTH
-        bbhstart = SCREEN_HEIGHT
-        bbhend = LOCKED_HEIGHT
-        bbw = int(bbwstart + (bbwend - bbwstart) * t)
-        bbh = int(bbhstart + (bbhend - bbhstart) * t)
-
-        moveSource(WAYWALL_SOURCE, x, y, bbw, bbh, LOCKED_LEFT_X, SCREEN_WIDTH - LOCKED_LEFT_X - LOCKED_WIDTH, LOCKED_TOP_Y, SCREEN_HEIGHT - LOCKED_TOP_Y - LOCKED_HEIGHT)
+        # waywall source
+        moveSource(WAYWALL_SOURCE, -2, -2, 2, 2)
+        # screenshot source
+        x = SCREEN_WIDTH / 2
+        y = SCREEN_HEIGHT / 2 - SCREEN_HEIGHT * t
+        bbw = SCREEN_WIDTH
+        bbh = SCREEN_HEIGHT
+        moveSource("Screenshot", x, y, bbw, bbh)
 
 
 
