@@ -59,6 +59,7 @@ config.actions = {
 import obspython as S
 import os
 import random
+import math
 
 OBS_SCENE = "Scene"
 WAYWALL_SOURCE = "Minecraft"
@@ -73,7 +74,10 @@ LOCKED_HEIGHT = 73   # 0.95 * SCREEN_HEIGHT / 14
 
 # feel free to omdify this to your liking; input is 0 to 1, output is 0 to 1
 def easing_func(t):
-    return (1 - 2 ** (-5 * t)) * (33/32)  # exponential ease out
+    # return (1 - 2 ** (-5 * t)) * (33/32)  # exponential ease out
+    # return t
+    return -t*t+2*t
+    # return -1/2*math.cos(math.pi*t) + 1/2
 
 LOCKED_CENTER_X = LOCKED_LEFT_X + LOCKED_WIDTH / 2
 LOCKED_CENTER_Y = LOCKED_TOP_Y + LOCKED_HEIGHT / 2
@@ -116,10 +120,12 @@ def parse_state(statetext):
         elif state == "playing" and locked_insts > 0:
             freeze_screenshot("Screenshot", True)
             hideSource("Background", True)
+            hideSource("Discard", True)
             return "next"
         elif state == "playing" and locked_insts == 0:
             freeze_screenshot("Screenshot", True)
             hideSource("Background", True)
+            hideSource("Discard", True)
             return "leaving"
         else:
             print(f"idk what {statetext} means")
@@ -150,10 +156,28 @@ def set_bounds_type(source, bounds_type):
     S.obs_sceneitem_set_bounds_type(sceneitem, bounds_type)
     S.obs_scene_release(instance_scene)
 
+# silly projectile stuff
+def projectile_3d_pos(t, xvel):
+    # starting at (0, 0, -1) with -0.1 zvel
+    zvel = -40
+    x = xvel * t
+    y = -20 * t * t + 50 * t
+    z = -1 + zvel * t
+    return (x, y, z)
+
+
+def projectile_transform(t, xvel):
+    x, y, z = projectile_3d_pos(t, xvel)
+    # look a bit down
+    # down_angle = 0.5
+    # y, z = y * math.cos(down_angle) - z * math.sin(down_angle), y * math.sin(down_angle) + z * math.cos(down_angle)
+    # project to 2D
+    return x/z * SCREEN_WIDTH/2 + SCREEN_WIDTH/2, y/z * SCREEN_HEIGHT/2 + SCREEN_HEIGHT/2, z
+
 
 def script_tick(seconds):
     # we have a visual size and a physical size
-    global anim_type, anim_time, animating, delay, lastmtime, total_locked, xvel
+    global anim_type, anim_time, animating, delay, lastmtime, total_locked, xvel, rotspeed
     if os.path.getmtime(WALL_STATE_FILE) != lastmtime:
         lastmtime = os.path.getmtime(WALL_STATE_FILE)
         try:
@@ -165,10 +189,8 @@ def script_tick(seconds):
                     anim_time = 0.0
                     animating = True
                     delay = 1
-                    if random.randint(0, 1) == 0:
-                        xvel = random.randint(-2000, -1000)
-                    else:
-                        xvel = random.randint(1000, 2000)
+                    xvel = random.uniform(-40, 40)
+                    rotspeed = random.uniform(-500, 500)
                     set_bounds_type(WAYWALL_SOURCE, S.OBS_BOUNDS_STRETCH)
                     set_bounds_type("Screenshot", S.OBS_BOUNDS_STRETCH)
                     print(f"Starting {anim_type} animation")
@@ -236,29 +258,23 @@ def script_tick(seconds):
         bbh = SCREEN_HEIGHT
         moveSource(WAYWALL_SOURCE, x, y, bbw, bbh)
         # screenshot source (silly)
-        # i want x to follow 1/rawt from 1 to 2
-        x1 = 1/(rawt+1)
-        
-        x = SCREEN_WIDTH / 2 + xvel * (1 - x1)
-        # y is a parabola following gravity
-        y = 2000 * rawt * rawt - 2000 * rawt + 540
-        bbw = (x1-0.5) * 2 * SCREEN_WIDTH
-        bbh = (x1-0.5) * 2 * SCREEN_HEIGHT
-        moveSource("Screenshot", x, y, bbw, bbh, rot=rawt * 900)
+        x, y, z = projectile_transform(rawt, xvel)
+        bbw = SCREEN_WIDTH / z
+        bbh = SCREEN_HEIGHT / z
+        # moveSource("Screenshot", x, y, bbw, bbh, rot=0)
+        moveSource("Screenshot", x, y, bbw, bbh, rot=rawt * rotspeed)
+        hideSource("Discard", False)
+        moveSource("Discard", x, y, 250, 358)
     elif anim_type == "leaving":
         # waywall source
         moveSource(WAYWALL_SOURCE, -2, -2, 2, 2)
         # screenshot source (silly)
-        # i want x to follow 1/rawt from 1 to 2
-        x1 = 1/(rawt+1)
-        x = SCREEN_WIDTH / 2 + xvel * (1 - x1)
-        # y is a parabola following gravity
-        y = 2000 * rawt * rawt - 2000 * rawt + 540
-        bbw = (x1-0.5) * 2 * SCREEN_WIDTH
-        bbh = (x1-0.5) * 2 * SCREEN_HEIGHT
-        print(f"{bbw=} {y=}")
-        moveSource("Screenshot", x, y, bbw, bbh, rot=rawt * 900)
-
+        x, y, z = projectile_transform(rawt, xvel)
+        bbw = SCREEN_WIDTH / z
+        bbh = SCREEN_HEIGHT / z
+        moveSource("Screenshot", x, y, bbw, bbh, rot=rawt * rotspeed)
+        hideSource("Discard", False)
+        moveSource("Discard", x, y, 250, 358)
 
 
 def script_description():
