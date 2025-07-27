@@ -73,10 +73,7 @@ LOCKED_HEIGHT = 73   # 0.95 * SCREEN_HEIGHT / 14
 
 # feel free to omdify this to your liking; input is 0 to 1, output is 0 to 1
 def easing_func(t):
-    # cubic easing out
-    t = t - 1
-    t = t * t * t + 1
-    return t
+    return (1 - 2 ** (-5 * t)) * (33/32)  # exponential ease out
 
 LOCKED_CENTER_X = LOCKED_LEFT_X + LOCKED_WIDTH / 2
 LOCKED_CENTER_Y = LOCKED_TOP_Y + LOCKED_HEIGHT / 2
@@ -113,6 +110,7 @@ def parse_state(statetext):
         if state == "entering":
             freeze_screenshot("Screenshot", True)
             freeze_screenshot("Wall", True)
+            hideSource("Background", True)
             total_locked = locked_insts
             return "entering"
         elif state == "playing" and locked_insts > 0:
@@ -183,7 +181,7 @@ def script_tick(seconds):
         return
 
     anim_time += seconds
-    rawt = anim_time * 2.0
+    rawt = anim_time / 0.5
     if rawt > 1:
         animating = False
         freeze_screenshot("Screenshot", False)
